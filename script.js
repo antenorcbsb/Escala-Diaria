@@ -55,6 +55,8 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
          if (!loaded) {
              return;
          }
+
+             console.log( 'Lista de PDFs xxx:', loaded ); 
      
         // updateViewer();
      
@@ -75,11 +77,11 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
            /* * Guarda a lista de PDFs */ 
            pdfList = data.files || {}; 
            
-           console.log( 'Lista de PDFs:', pdfList ); 
+          // console.log( 'Lista de PDFs:', pdfList ); 
            
            /* * Mostra a quantidade * de PDFs encontrados */ 
-           console.log( 'PDFs encontrados:', Object.keys(pdfList).length ); 
-           return true; 
+          // console.log( 'PDFs encontrados:', Object.keys(pdfList).length ); 
+           return pdfList; 
       } 
       catch (error) { 
         console.error( 'Erro ao obter PDFs:', error ); 
