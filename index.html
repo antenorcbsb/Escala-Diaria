@@ -60,7 +60,7 @@
 
     <div id="info-badge">
         <span class="status-dot"></span>
-        <span id="badge-text">A carregar escala...</span>
+        <span id="badge-text">A carregar PDF...</span>
     </div>
 
     <script>
@@ -91,7 +91,8 @@
             const month = String(targetDate.getMonth() + 1).padStart(2, '0');
             const day = String(targetDate.getDate()).padStart(2, '0');
 
-            const fileName = `${year}-${month}-${day}_${shift}.pdf`;
+            // Formato correspondente aos seus ficheiros: DDMMAAAA Turno.pdf (ex: 01092026 Dia.pdf)
+            const fileName = `${day}${month}${year} ${shift}.pdf`;
             const formattedDate = `${day}/${month}/${year}`;
 
             return { fileName, shift, formattedDate };
@@ -102,8 +103,8 @@
             const iframe = document.getElementById('pdf-frame');
             const badgeText = document.getElementById('badge-text');
 
-            // Constrói o URL de pesquisa direta na pasta sem precisar de API Key
-            const searchUrl = `https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#list`;
+            // Força a pesquisa do ficheiro exato dentro da pasta do Google Drive
+            const searchUrl = `https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#search/${encodeURIComponent(fileName)}`;
             
             if (iframe.src !== searchUrl) {
                 iframe.src = searchUrl;
@@ -114,7 +115,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateViewer();
-            setInterval(updateViewer, 60000); // Atualiza a verificação a cada minuto
+            setInterval(updateViewer, 60000); // Reavalia o turno a cada 1 minuto
         });
     </script>
 </body>
