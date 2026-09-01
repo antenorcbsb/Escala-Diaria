@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador Automático de PDF - Google Drive</title>
+    <title>Visualizador Automático de PDF - BSB Braga</title>
     <style>
         * {
             box-sizing: border-box;
@@ -120,7 +120,7 @@
         <div id="status-overlay">
             <div class="spinner" id="spinner"></div>
             <div class="status-title" id="status-title">A carregar PDF...</div>
-            <div class="status-desc" id="status-desc">A verificar ficheiro no Google Drive</div>
+            <div class="status-desc" id="status-desc">A verificar ficheiro na pasta do Google Drive</div>
         </div>
 
         <!-- Frame para exibição do PDF -->
@@ -135,20 +135,17 @@
 
     <script>
         /******************************************************************
-         * CONFIGURAÇÃO - INSIRA OS SEUS DADOS AQUI
+         * CONFIGURAÇÃO DO GOOGLE DRIVE
          ******************************************************************/
-        const API_KEY = 'SUA_CHAVE_API_AQUI';      // Substitua pela sua Google Drive API Key
-        const FOLDER_ID = 'SEU_ID_DA_PASTA_AQUI';  // Substitua pelo ID da pasta do Google Drive
+        const API_KEY = 'SUA_CHAVE_API_AQUI'; // Insira a sua API Key do Google Cloud
+        const FOLDER_ID = '1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI'; // O ID da sua pasta fornecido
 
-        // Variável de controlo para evitar recarregamentos desnecessários do iframe
         let currentFileId = null;
 
         /**
-         * Calcula qual o nome do ficheiro PDF esperado com base no horário atual.
-         * Regra:
-         * - 06:30 às 18:29 -> AAAA-MM-DD_Dia.pdf (Data atual)
-         * - 18:30 às 23:59 -> AAAA-MM-DD_Noite.pdf (Data atual)
-         * - 00:00 às 06:29 -> AAAA-MM-DD_Noite.pdf (Data do dia anterior)
+         * Determina o nome do PDF esperado conforme a hora atual:
+         * - 06:30 às 18:29 -> YYYY-MM-DD_Dia.pdf
+         * - 18:30 às 06:29 -> YYYY-MM-DD_Noite.pdf
          */
         function getExpectedFileName() {
             const now = new Date();
@@ -156,19 +153,16 @@
             const minutes = now.getMinutes();
             const timeInMinutes = hours * 60 + minutes;
 
-            const startDay = 6 * 60 + 30;    // 06:30 = 390 min
-            const startNight = 18 * 60 + 30; // 18:30 = 1110 min
+            const startDay = 6 * 60 + 30;    // 06:30 (390 min)
+            const startNight = 18 * 60 + 30; // 18:30 (1110 min)
 
             let targetDate = new Date(now);
             let shift = "";
 
             if (timeInMinutes >= startDay && timeInMinutes < startNight) {
-                // Turno do DIA (06:30 às 18:29)
                 shift = "Dia";
             } else {
-                // Turno da NOITE (18:30 às 06:29)
                 shift = "Noite";
-                // Se estivermos na madrugada (00:00 - 06:29), o PDF da Noite pertence ao dia anterior
                 if (timeInMinutes < startDay) {
                     targetDate.setDate(targetDate.getDate() - 1);
                 }
@@ -185,7 +179,7 @@
         }
 
         /**
-         * Consulta a API do Google Drive e atualiza o visualizador
+         * Procura o PDF na pasta do Google Drive via API v3
          */
         async function checkAndUpdatePDF() {
             const { fileName, shift, formattedDate } = getExpectedFileName();
@@ -197,7 +191,6 @@
             const spinner = document.getElementById('spinner');
             const iframe = document.getElementById('pdf-frame');
 
-            // Constrói a query de procura na API v3 do Google Drive
             const query = encodeURIComponent(`name = '${fileName}' and '${FOLDER_ID}' in parents and trashed = false`);
             const url = `https://www.googleapis.com/drive/v3/files?q=${query}&key=${API_KEY}&fields=files(id,name)`;
 
@@ -205,7 +198,7 @@
                 const response = await fetch(url);
                 
                 if (!response.ok) {
-                    throw new Error(`Erro API (${response.status})`);
+                    throw new Error(`Erro na API (${response.status})`);
                 }
 
                 const data = await response.json();
@@ -214,21 +207,17 @@
                     const fileId = data.files[0].id;
                     const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
 
-                    // Só atualiza o SRC do iframe se o ficheiro tiver mudado
                     if (currentFileId !== fileId) {
                         currentFileId = fileId;
                         iframe.src = embedUrl;
                     }
 
-                    // Esconde a camada de carregamento
                     statusOverlay.style.opacity = '0';
                     setTimeout(() => { statusOverlay.style.display = 'none'; }, 500);
 
-                    // Atualiza o estado visual
                     statusDot.className = 'status-dot';
-                    badgeText.innerText = `Exibindo: ${formattedDate} (${shift})`;
+                    badgeText.innerText = `A exibir: ${formattedDate} (${shift})`;
                 } else {
-                    // Ficheiro não encontrado na pasta
                     currentFileId = null;
                     iframe.src = '';
                     
@@ -236,31 +225,28 @@
                     statusOverlay.style.opacity = '1';
                     spinner.style.display = 'none';
                     statusTitle.innerText = 'PDF Não Encontrado';
-                    statusDesc.innerText = `A aguardar o ficheiro "${fileName}" na pasta do Google Drive.`;
+                    statusDesc.innerText = `A aguardar pelo ficheiro "${fileName}" na pasta.`;
 
                     statusDot.className = 'status-dot loading';
                     badgeText.innerText = `A aguardar ficheiro: ${fileName}`;
                 }
             } catch (error) {
-                console.error('Erro ao procurar o PDF no Google Drive:', error);
+                console.error('Erro ao consultar o Google Drive:', error);
                 
                 statusOverlay.style.display = 'flex';
                 statusOverlay.style.opacity = '1';
                 spinner.style.display = 'none';
                 statusTitle.innerText = 'Erro de Ligação';
-                statusDesc.innerText = 'Não foi possível comunicar com a Google Drive API. Verifique a API Key e a ligação à rede.';
+                statusDesc.innerText = 'Não foi possível ligar à API do Google Drive. Verifique a API Key.';
 
                 statusDot.className = 'status-dot error';
-                badgeText.innerText = 'Erro ao carregar dados';
+                badgeText.innerText = 'Erro de ligação';
             }
         }
 
-        // Executa a primeira verificação quando o documento estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
             checkAndUpdatePDF();
-            
-            // Verifica a cada 60 segundos se o ficheiro/turno mudou
-            setInterval(checkAndUpdatePDF, 60000);
+            setInterval(checkAndUpdatePDF, 60000); // Atualiza a verificação a cada 60 segundos
         });
     </script>
 </body>
