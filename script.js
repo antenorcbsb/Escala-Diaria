@@ -1,5 +1,5 @@
 const FOLDER_ID = '1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI';
-const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnNy3uYHAh_awi2v-OTM2NVASnu9K9d84mwxsnhHmf0IKaN6ipblk8/exec';
 
       function getExpectedFileName() {
           const now = new Date();
@@ -64,7 +64,7 @@ const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lK
 
     async function loadPdfList() { 
       try {  
-           const response = await fetch( APPS_SCRIPT_URL + '?t=' + Date.now() ); 
+           const response = await fetch( APPS_SCRIPT_URL ); 
            
            if (!response.ok) { throw new Error( 'Erro HTTP ' + response.status ); } 
            
