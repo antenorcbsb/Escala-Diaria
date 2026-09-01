@@ -34,25 +34,39 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
       }
 
       function updateViewer(loaded) {
-          const { fileName, shift, formattedDate } = getExpectedFileName();
-          const iframe = document.getElementById('pdf-frame');
-          const badgeText = document.getElementById('badge-text');
 
-          const pdf = Object.values(loaded).find(
-                object => object.name === fileName
-            );
-            
-            if (pdf) {
-                iframe.src =
-                    `https://drive.google.com/file/d/${pdf.id}/preview`;
-            }
-          console.log("TESTE", iframe.src);
-            
-          if (iframe.src !== searchUrl) {
-              iframe.src = searchUrl;
+          const {fileName, shift, formattedDate } = getExpectedFileName();
+      
+          console.log('Ficheiro procurado:', fileName);
+      
+          // Como loaded é um objeto indexado pelo nome do PDF
+          const pdf = loaded[fileName];
+      
+          if (!pdf) {
+              console.error( 'PDF não encontrado:', fileName
+              );
+              return;
           }
-
-          badgeText.innerText = `Turno Atual: ${formattedDate} (${shift})`;
+      
+          console.log( 'PDF encontrado:', pdf);
+      
+          console.log('ID:', pdf.id);
+      
+          const iframe = document.getElementById('pdf-frame');
+      
+          const pdfUrl = `https://drive.google.com/file/d/${pdf.id}/preview`;
+      
+         // console.log( 'TESTE', pdfUrl );
+      
+          // Abrir PDF diretamente
+          if (iframe.src !== pdfUrl) {
+              iframe.src = pdfUrl;
+          }
+      
+          const badgeText = document.getElementById('badge-text');
+          if (badgeText) {
+              badgeText.innerText = `Turno Atual: ${formattedDate} (${shift})`;
+          }
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
@@ -62,12 +76,18 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
                   return;
             }
             
-            // console.log( 'Lista de PDFs xxx:', loaded ); 
-            const { fileName, shift, formattedDate } = getExpectedFileName();
+            console.log( 'Lista de PDFs:', loaded );
             
             updateViewer(loaded);
-            // setInterval(updateViewer, 60000);
-      });
+            
+            setInterval(
+            async () => {
+                const loaded = await loadPdfList();
+                if (loaded) {
+                    updateViewer(loaded);
+                }
+            }, 60000 );
+      } );
 
     async function loadPdfList() { 
       try {  
