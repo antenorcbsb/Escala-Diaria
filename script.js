@@ -12,8 +12,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       scheduleNextShift(loaded);
 } );
 
+function getPortugalTime() {
+    return new Date(
+        new Date().toLocaleString('en-US', {
+            timeZone: 'Europe/Lisbon'
+        })
+    );
+}
+
 function getExpectedFileName() {
-    const now = new Date();
+    const now = getPortugalTime();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const timeInMinutes = hours * 60 + minutes;
@@ -101,7 +109,8 @@ async function loadPdfList() {
 
 function scheduleNextShift(loaded) {
       
-      const now = new Date();
+      const now = getPortugalTime();
+      
       const day = new Date(now);
       day.setHours(6, 30, 0, 0);
       
