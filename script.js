@@ -1,4 +1,5 @@
  const FOLDER_ID = '1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI';
+const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI';
 
       function getExpectedFileName() {
           const now = new Date();
