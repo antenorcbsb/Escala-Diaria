@@ -33,14 +33,21 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
           return { fileName, shift, formattedDate };
       }
 
-      function updateViewer() {
+      function updateViewer(loaded) {
           const { fileName, shift, formattedDate } = getExpectedFileName();
           const iframe = document.getElementById('pdf-frame');
           const badgeText = document.getElementById('badge-text');
 
-          // Força a pesquisa do ficheiro exato dentro da pasta do Google Drive
-          const searchUrl = `https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#search/${encodeURIComponent(fileName)}`;
-          
+          const pdf = loaded.find(
+                loaded => loaded.name === fileName
+            );
+            
+            if (pdf) {
+                iframe.src =
+                    `https://drive.google.com/file/d/${pdf.id}/preview`;
+            }
+          console.log("TESTE", iframe.src);
+            
           if (iframe.src !== searchUrl) {
               iframe.src = searchUrl;
           }
@@ -56,9 +63,11 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
              return;
          }
 
-      console.log( 'Lista de PDFs xxx:', loaded ); 
-           console.log(getExpectedFileName());
-        // updateViewer();
+            // console.log( 'Lista de PDFs xxx:', loaded ); 
+            const { fileName, shift, formattedDate } = getExpectedFileName();
+
+      
+        updateViewer(loaded);
      
         // setInterval(updateViewer, 60000);
      
