@@ -48,16 +48,19 @@ const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lK
           badgeText.innerText = `Turno Atual: ${formattedDate} (${shift})`;
       }
 
-      document.addEventListener('DOMContentLoaded', () => {
-          //updateViewer();
-          const loaded = await loadPdfList();
+      document.addEventListener('DOMContentLoaded', async () => {
+
+    const loaded = await loadPdfList();
 
     if (!loaded) {
         return;
     }
 
-          setInterval(updateViewer, 60000); // Reavalia o turno a cada 1 minuto
-      });
+   // updateViewer();
+
+   // setInterval(updateViewer, 60000);
+
+});
 
     async function loadPdfList() { 
       try {  
