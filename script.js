@@ -50,7 +50,12 @@ const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lK
 
       document.addEventListener('DOMContentLoaded', () => {
           //updateViewer();
-          const loaded = await loadPdfList(); if (!loaded) { return; }
+          const loaded = await loadPdfList();
+
+    if (!loaded) {
+        return;
+    }
+
           setInterval(updateViewer, 60000); // Reavalia o turno a cada 1 minuto
       });
 
