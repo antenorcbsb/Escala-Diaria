@@ -124,11 +124,15 @@ function scheduleNextShift(loaded) {
         nextChange.setHours(6, 30, 0, 0);
     }
 
-    const delay =
-        nextChange.getTime() - now.getTime();
+    const delay = nextChange.getTime() - now.getTime();
 
-    console.log( 'Próxima mudança:', nextChange );
-    console.log( 'Tempo até mudança:', Math.round(delay / 1000), 'segundos');
+      const totalMinutes = Math.ceil(delay / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const nextHour = String(nextChange.getHours()).padStart(2, '0');
+      const nextMinute = String(nextChange.getMinutes()).padStart(2, '0');
+      
+      console.log( `Próxima mudança: ${nextHour}:${nextMinute} (daqui a ${hours}h ${minutes}min)`);
 
     setTimeout(() => {
         updateViewer(loaded);
