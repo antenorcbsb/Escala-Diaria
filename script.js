@@ -56,8 +56,8 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
              return;
          }
 
-             console.log( 'Lista de PDFs xxx:', loaded ); 
-     
+      console.log( 'Lista de PDFs xxx:', loaded ); 
+           console.log(getExpectedFileName());
         // updateViewer();
      
         // setInterval(updateViewer, 60000);
