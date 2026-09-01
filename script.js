@@ -100,32 +100,28 @@ async function loadPdfList() {
 }
 
 function scheduleNextShift(loaded) {
-
-    const now = new Date();
-    const day = new Date(now);
-    day.setHours(6, 30, 0, 0);
-
-    const night = new Date(now);
-    night.setHours(18, 30, 0, 0);
-
-    let nextChange;
-
-    if (now < day) {
+      
+      const now = new Date();
+      const day = new Date(now);
+      day.setHours(6, 30, 0, 0);
+      
+      const night = new Date(now);
+      night.setHours(18, 30, 0, 0);
+      
+      let nextChange;
+      
+      if (now < day) {
         nextChange = day;
-    }
-    else if (now < night) {
+      } else if (now < night) {
         nextChange = night;
-    }
-    else {
+      } else {
         nextChange = new Date(now);
-        nextChange.setDate(
-            nextChange.getDate() + 1
-        );
+        nextChange.setDate( nextChange.getDate() + 1 );
         nextChange.setHours(6, 30, 0, 0);
-    }
-
-    const delay = nextChange.getTime() - now.getTime();
-
+      }
+      
+      const delay = nextChange.getTime() - now.getTime();
+      
       const totalMinutes = Math.ceil(delay / 60000);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
@@ -133,10 +129,10 @@ function scheduleNextShift(loaded) {
       const nextMinute = String(nextChange.getMinutes()).padStart(2, '0');
       
       console.log( `Próxima mudança: ${nextHour}:${nextMinute} (daqui a ${hours}h ${minutes}min)`);
-
-    setTimeout(() => {
+      
+      setTimeout(() => {
         updateViewer(loaded);
         // Agenda a mudança seguinte
         scheduleNextShift(loaded);
-    }, delay);
+      }, delay);
 }
