@@ -49,18 +49,18 @@ const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lK
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
-
-    const loaded = await loadPdfList();
-
-    if (!loaded) {
-        return;
-    }
-
-   // updateViewer();
-
-   // setInterval(updateViewer, 60000);
-
-});
+     
+         const loaded = await loadPdfList();
+     
+         if (!loaded) {
+             return;
+         }
+     
+        // updateViewer();
+     
+        // setInterval(updateViewer, 60000);
+     
+     });
 
     async function loadPdfList() { 
       try {  
@@ -85,3 +85,4 @@ const APPS_SCRIPT_URL = 'https://drive.google.com/drive/folders/1rvXx9ZZ8Rv6b6lK
         console.error( 'Erro ao obter PDFs:', error ); 
   }
 
+  }
