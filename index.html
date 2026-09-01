@@ -105,7 +105,7 @@
 
             // Força a pesquisa do ficheiro exato dentro da pasta do Google Drive
             const searchUrl = `https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#search/${encodeURIComponent(fileName)}`;
-            
+            console.log(searchUrl);
             if (iframe.src !== searchUrl) {
                 iframe.src = searchUrl;
             }
