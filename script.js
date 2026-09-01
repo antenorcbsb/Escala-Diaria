@@ -2,9 +2,14 @@ const FOLDER_ID = '1rvXx9ZZ8Rv6b6lKJF7PWnnoK_smz1PBI';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnNy3uYHAh_awi2v-OTM2NVASnu9K9d84mwxsnhHmf0IKaN6ipblk8/exec';
 
 document.addEventListener('DOMContentLoaded', async () => {
+      setStatus('loading', 'A carregar PDF...');
+      
       const loaded = await loadPdfList();
       
-      if (!loaded) { return; }
+      if (!loaded) { 
+            setStatus('error', 'Erro ao carregar a lista de PDFs');
+            return; 
+      }
       
       // Abre imediatamente o turno atual
       updateViewer(loaded);
@@ -54,6 +59,7 @@ function getExpectedFileName() {
 
 function updateViewer(loaded) {
 
+      setStatus('loading', 'A carregar PDF...');
     const {fileName, shift, formattedDate } = getExpectedFileName();
     // console.log('Ficheiro procurado:', fileName);
 
@@ -62,6 +68,7 @@ function updateViewer(loaded) {
 
     if (!pdf) {
         console.error( 'PDF não encontrado:', fileName );
+          setStatus('error',`PDF não encontrado: ${fileName}` );
         return;
     }
 
@@ -78,14 +85,17 @@ function updateViewer(loaded) {
         iframe.src = pdfUrl;
     }
 
-    const badgeText = document.getElementById('badge-text');
-    if (badgeText) {
-        badgeText.innerText = `Turno Atual: ${formattedDate} (${shift})`;
-    }
+    //const badgeText = document.getElementById('badge-text');
+    //if (badgeText) {
+    //    badgeText.innerText = `Turno Atual: ${formattedDate} (${shift})`;
+    //}
+
+      setStatus( 'success', `Turno Atual: ${formattedDate} (${shift})`);
 }
 
 async function loadPdfList() { 
       try {  
+            setStatus('loading', 'A carregar lista de PDFs...');
             const response = await fetch( APPS_SCRIPT_URL ); 
             
             if (!response.ok) { throw new Error( 'Erro HTTP ' + response.status ); } 
@@ -104,6 +114,8 @@ async function loadPdfList() {
       } 
       catch (error) { 
         console.error( 'Erro ao obter PDFs:', error ); 
+            setStatus('error','Erro ao carregar os PDFs');
+
       }
 }
 
@@ -144,4 +156,33 @@ function scheduleNextShift(loaded) {
         // Agenda a mudança seguinte
         scheduleNextShift(loaded);
       }, delay);
+}
+
+
+function setStatus(type, message) {
+
+    const badgeText = document.getElementById('badge-text');
+    const statusDot = document.getElementById('status-dot');
+
+    if (!badgeText || !statusDot) return;
+
+    badgeText.innerText = message;
+
+    statusDot.classList.remove(
+        'status-loading',
+        'status-success',
+        'status-error'
+    );
+
+    if (type === 'loading') {
+        statusDot.classList.add('status-loading');
+    }
+
+    if (type === 'success') {
+        statusDot.classList.add('status-success');
+    }
+
+    if (type === 'error') {
+        statusDot.classList.add('status-error');
+    }
 }
