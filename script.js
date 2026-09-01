@@ -38,8 +38,8 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
           const iframe = document.getElementById('pdf-frame');
           const badgeText = document.getElementById('badge-text');
 
-          const pdf = loaded.find(
-                loaded => loaded.name === fileName
+          const pdf = Object.values(loaded).find(
+                object => object.name === fileName
             );
             
             if (pdf) {
@@ -56,44 +56,40 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkrQcx3xCgRsnN
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
-     
-         const loaded = await loadPdfList();
-     
-         if (!loaded) {
-             return;
-         }
-
+            const loaded = await loadPdfList();
+            
+            if (!loaded) {
+                  return;
+            }
+            
             // console.log( 'Lista de PDFs xxx:', loaded ); 
             const { fileName, shift, formattedDate } = getExpectedFileName();
-
-      
-        updateViewer(loaded);
-     
-        // setInterval(updateViewer, 60000);
-     
-     });
+            
+            updateViewer(loaded);
+            // setInterval(updateViewer, 60000);
+      });
 
     async function loadPdfList() { 
       try {  
-           const response = await fetch( APPS_SCRIPT_URL ); 
-           
-           if (!response.ok) { throw new Error( 'Erro HTTP ' + response.status ); } 
-           
-           const data = await response.json(); 
-           
-           if (!data.success) { throw new Error( 'O Google Apps Script devolveu um erro.' ); } 
-           
-           /* * Guarda a lista de PDFs */ 
-           pdfList = data.files || {}; 
-           
-          // console.log( 'Lista de PDFs:', pdfList ); 
-           
-           /* * Mostra a quantidade * de PDFs encontrados */ 
-          // console.log( 'PDFs encontrados:', Object.keys(pdfList).length ); 
-           return pdfList; 
+            const response = await fetch( APPS_SCRIPT_URL ); 
+            
+            if (!response.ok) { throw new Error( 'Erro HTTP ' + response.status ); } 
+            
+            const data = await response.json(); 
+            
+            if (!data.success) { throw new Error( 'O Google Apps Script devolveu um erro.' ); } 
+            
+            /* * Guarda a lista de PDFs */ 
+            pdfList = data.files || {}; 
+            
+            // console.log( 'Lista de PDFs:', pdfList ); 
+            
+            /* * Mostra a quantidade * de PDFs encontrados */ 
+            // console.log( 'PDFs encontrados:', Object.keys(pdfList).length ); 
+            return pdfList; 
       } 
       catch (error) { 
         console.error( 'Erro ao obter PDFs:', error ); 
-  }
+      }
 
   }
