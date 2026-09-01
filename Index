@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador Automático de PDF - Google Drive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #121212;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+        }
+
+        /* Contentor principal do iframe */
+        #viewer-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1e1e1e;
+        }
+
+        #pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Ecrã de carregamento e estado */
+        #status-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .status-desc {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        /* Badge informativo no canto inferior direito */
+        #info-badge {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e0e0e0;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+            display: inline-block;
+        }
+
+        .status-dot.error {
+            background-color: #e74c3c;
+        }
+
+        .status-dot.loading {
+            background-color: #f1c40f;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="viewer-container">
+        <!-- Ecrã de Estado/Carregamento -->
+        <div id="status-overlay">
+            <div class="spinner" id="spinner"></div>
+            <div class="status-title" id="status-title">A carregar PDF...</div>
+            <div class="status-desc" id="status-desc">A verificar ficheiro no Google Drive</div>
+        </div>
+
+        <!-- Frame para exibição do PDF -->
+        <iframe id="pdf-frame" src=""></iframe>
+
+        <!-- Indicador Informativo -->
+        <div id="info-badge">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="badge-text">A inicializar...</span>
+        </div>
+    </div>
+
+    <script>
+        /******************************************************************
+         * CONFIGURAÇÃO - INSIRA OS SEUS DADOS AQUI
+         ******************************************************************/
+        const API_KEY = 'SUA_CHAVE_API_AQUI';      // Substitua pela sua Google Drive API Key
+        const FOLDER_ID = 'SEU_ID_DA_PASTA_AQUI';  // Substitua pelo ID da pasta do Google Drive
+
+        // Variável de controlo para evitar recarregamentos desnecessários do iframe
+        let currentFileId = null;
+
+        /**
+         * Calcula qual o nome do ficheiro PDF esperado com base no horário atual.
+         * Regra:
+         * - 06:30 às 18:29 -> AAAA-MM-DD_Dia.pdf (Data atual)
+         * - 18:30 às 23:59 -> AAAA-MM-DD_Noite.pdf (Data atual)
+         * - 00:00 às 06:29 -> AAAA-MM-DD_Noite.pdf (Data do dia anterior)
+         */
+        function getExpectedFileName() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const timeInMinutes = hours * 60 + minutes;
+
+            const startDay = 6 * 60 + 30;    // 06:30 = 390 min
+            const startNight = 18 * 60 + 30; // 18:30 = 1110 min
+
+            let targetDate = new Date(now);
+            let shift = "";
+
+            if (timeInMinutes >= startDay && timeInMinutes < startNight) {
+                // Turno do DIA (06:30 às 18:29)
+                shift = "Dia";
+            } else {
+                // Turno da NOITE (18:30 às 06:29)
+                shift = "Noite";
+                // Se estivermos na madrugada (00:00 - 06:29), o PDF da Noite pertence ao dia anterior
+                if (timeInMinutes < startDay) {
+                    targetDate.setDate(targetDate.getDate() - 1);
+                }
+            }
+
+            const year = targetDate.getFullYear();
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const day = String(targetDate.getDate()).padStart(2, '0');
+
+            const fileName = `${year}-${month}-${day}_${shift}.pdf`;
+            const formattedDate = `${day}/${month}/${year}`;
+
+            return { fileName, shift, formattedDate };
+        }
+
+        /**
+         * Consulta a API do Google Drive e atualiza o visualizador
+         */
+        async function checkAndUpdatePDF() {
+            const { fileName, shift, formattedDate } = getExpectedFileName();
+            const badgeText = document.getElementById('badge-text');
+            const statusDot = document.getElementById('status-dot');
+            const statusOverlay = document.getElementById('status-overlay');
+            const statusTitle = document.getElementById('status-title');
+            const statusDesc = document.getElementById('status-desc');
+            const spinner = document.getElementById('spinner');
+            const iframe = document.getElementById('pdf-frame');
+
+            // Constrói a query de procura na API v3 do Google Drive
+            const query = encodeURIComponent(`name = '${fileName}' and '${FOLDER_ID}' in parents and trashed = false`);
+            const url = `https://www.googleapis.com/drive/v3/files?q=${query}&key=${API_KEY}&fields=files(id,name)`;
+
+            try {
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro API (${response.status})`);
+                }
+
+                const data = await response.json();
+
+                if (data.files && data.files.length > 0) {
+                    const fileId = data.files[0].id;
+                    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
+                    // Só atualiza o SRC do iframe se o ficheiro tiver mudado
+                    if (currentFileId !== fileId) {
+                        currentFileId = fileId;
+                        iframe.src = embedUrl;
+                    }
+
+                    // Esconde a camada de carregamento
+                    statusOverlay.style.opacity = '0';
+                    setTimeout(() => { statusOverlay.style.display = 'none'; }, 500);
+
+                    // Atualiza o estado visual
+                    statusDot.className = 'status-dot';
+                    badgeText.innerText = `Exibindo: ${formattedDate} (${shift})`;
+                } else {
+                    // Ficheiro não encontrado na pasta
+                    currentFileId = null;
+                    iframe.src = '';
+                    
+                    statusOverlay.style.display = 'flex';
+                    statusOverlay.style.opacity = '1';
+                    spinner.style.display = 'none';
+                    statusTitle.innerText = 'PDF Não Encontrado';
+                    statusDesc.innerText = `A aguardar o ficheiro "${fileName}" na pasta do Google Drive.`;
+
+                    statusDot.className = 'status-dot loading';
+                    badgeText.innerText = `A aguardar ficheiro: ${fileName}`;
+                }
+            } catch (error) {
+                console.error('Erro ao procurar o PDF no Google Drive:', error);
+                
+                statusOverlay.style.display = 'flex';
+                statusOverlay.style.opacity = '1';
+                spinner.style.display = 'none';
+                statusTitle.innerText = 'Erro de Ligação';
+                statusDesc.innerText = 'Não foi possível comunicar com a Google Drive API. Verifique a API Key e a ligação à rede.';
+
+                statusDot.className = 'status-dot error';
+                badgeText.innerText = 'Erro ao carregar dados';
+            }
+        }
+
+        // Executa a primeira verificação quando o documento estiver pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAndUpdatePDF();
+            
+            // Verifica a cada 60 segundos se o ficheiro/turno mudou
+            setInterval(checkAndUpdatePDF, 60000);
+        });
+    </script>
+</body>
+</html>
